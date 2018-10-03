@@ -87,7 +87,7 @@ if (__name__ == '__main__'):
     segments = find_segments(code)
 
     for seg in segments:
-        if (seg.identity in {"", "\'", "\""}):
+        if (seg.category in {"", "\'", "\""}):
             print(seg.data, end = "")
-        elif (seg.identity in {"//", "/*"}):
+        elif (seg.category in {"//", "/*"}):
             print()
