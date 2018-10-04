@@ -66,7 +66,8 @@ def find_segments(code):
     prev_divider = Divider(0, "", "")
     for divider in dividers:
         if (prev_divider.start == ""):
-            if (divider.start in {"//", "/*", "\"", "\'"}):
+            if (divider.start in {"//", "/*", "\""} or
+                    (divider.start == "\'" and not code[divider.pos - 1].isdigit())):
                 segments.append(Segment(code, prev_divider, divider))
                 prev_divider = divider
         else:
