@@ -34,7 +34,7 @@ def find_all_dividers(code):
         dividers += find_dividers(code, symbol, to_end[symbol])
     for symbol in {"\"", "\'", "\n"}:
         pos_dividers = find_dividers(code, symbol, to_end[symbol])
-        dividers += (d for d in pos_dividers if is_not_escaped(code, d.pos))
+        dividers += (d for d in pos_dividers if not is_escaped(code, d.pos))
     dividers.sort()
     return dividers
 
@@ -52,7 +52,7 @@ def find_dividers(code, symbol, end):
 # code is a string of C++
 # index is the index of a character that could be escaped
 # returns true if there is an even number of backslashes before index
-def is_not_escaped(code, index):
+def is_escaped(code, index):
     prev_index = index - 1
     while (prev_index >= 0 and code[prev_index] == "\\"):
         prev_index -= 1
