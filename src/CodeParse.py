@@ -30,9 +30,9 @@ class Divider:
 def find_all_dividers(code):
     dividers = list()
     to_end = {"//":"\n", "/*":"*/", "\"":"\"", "\'":"\'", "*/":"", "\n":""}
-    for symbol in {"//", "/*", "*/"}:
+    for symbol in {"//", "/*", "*/", "\n"}:
         dividers += find_dividers(code, symbol, to_end[symbol])
-    for symbol in {"\"", "\'", "\n"}:
+    for symbol in {"\"", "\'"}:
         pos_dividers = find_dividers(code, symbol, to_end[symbol])
         dividers += (d for d in pos_dividers if not is_escaped(code, d.pos))
     dividers.sort()
@@ -79,11 +79,17 @@ def find_segments(code):
     segments.append(Segment(code, prev_divider, Divider(len(code), "", "")))
     return segments
 
+# returns C++ code from file at path with escaped new lines removed
+def get_code(path):
+    code = open(path, 'r').read()
+    code = code.replace("\\\n", "")
+    return code
+
 # main
 if (__name__ == '__main__'):
 
     path = "main.cpp"
-    code = open(path, 'r').read()
+    code = get_code(path)
 
     segments = find_segments(code)
 
