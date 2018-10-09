@@ -62,6 +62,7 @@ class SegmentManager:
     # adds the segment starting at index to segments
     # returns the index of the next character to check
     def append_code(self, code, index):
+        # TODO add in reserved word dictionary?
         if (code[index] in {" ", "\t", "\n"}):
             return index + 1
         elif (code[index] == "#"):
@@ -152,9 +153,10 @@ def is_escaped(code, index):
         prev_index -= 1
     return (index - prev_index) % 2 == 0
 
-# code is a string of C++
+# path is a .cpp file
 # returns a list of Segments, one for each group of code in the same category
-def find_segments(code):
+def find_segments(path):
+    code = get_code(path)
     segment_manager = SegmentManager()
     dividers = find_all_dividers(code)
     prev_divider = Divider()
@@ -177,6 +179,14 @@ def get_code(path):
     code = code.replace("\\\n", "")
     return code
 
+# segments is a list of Segments
+# returns a tree data structure
+def create_tree(segments):
+
+    # TODO turn segments into a tree data structure
+
+    return segments
+
 # segments is a list of Segment
 # prints all of the segments with what type of segment
 def print_all_segments(segments):
@@ -198,6 +208,8 @@ def print_all_segments(segments):
             category = "HEADER   "
         elif (seg.category in {"//", "/*"}):
             category = "COMMENT  "
+        else:
+            category = seg.category
         print(category, ":", seg.data.replace("\n", " "))
 
 # segments is a list of Segment
@@ -228,10 +240,9 @@ def print_min_segments(segments):
 # main
 if (__name__ == '__main__'):
 
-    path = "main.cpp"
-    code = get_code(path)
-
-    segments = find_segments(code)
+    segments = find_segments("main.cpp")
 
     print_all_segments(segments)
     print_min_segments(segments)
+
+    tree = create_tree(segments)
