@@ -1,4 +1,4 @@
-
+ 
 # used to split a string into segments of different meaning
 class Segment:
     data = str()
@@ -179,14 +179,6 @@ def get_code(path):
     code = code.replace("\\\n", "")
     return code
 
-# segments is a list of Segments
-# returns a tree data structure
-def create_tree(segments):
-
-    # TODO turn segments into a tree data structure
-
-    return segments
-
 # segments is a list of Segment
 # prints all of the segments with what type of segment
 def print_all_segments(segments):
@@ -236,13 +228,3 @@ def print_min_segments(segments):
             line_empty = True
         elif (seg.category in {"//", "/*"}):
             print(end = "")
-
-# main
-if (__name__ == '__main__'):
-
-    segments = find_segments("main.cpp")
-
-    print_all_segments(segments)
-    print_min_segments(segments)
-
-    tree = create_tree(segments)
