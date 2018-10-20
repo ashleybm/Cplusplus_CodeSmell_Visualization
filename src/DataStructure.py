@@ -1,11 +1,11 @@
 import CodeParse
 
-class Leaf:
+class Expression:
     segments = list()
     def __init__(self):
         self.segments = list()
 
-class Node(Leaf):
+class Scope(Expression):
     start = int()
     end = int()
 
@@ -17,32 +17,32 @@ class Node(Leaf):
 def create_tree(segments, start):
 
     # TODO turn segments into a tree data structure
-    node = Node(start)
-    leaf = Leaf()
+    scope = Scope(start)
+    expression = Expression()
     index = start
     while (index < len(segments)):
         if (segments[index].category == "S" and segments[index].data in {"{", ";", "}"}):
             if (segments[index].data == "{"):
-                node.segments.append(create_tree(segments, index + 1))
-                index = node.segments[-1].end
+                scope.segments.append(create_tree(segments, index + 1))
+                index = scope.segments[-1].end
             elif (segments[index].data == "}"):
-                node.end = index
-                return node
+                scope.end = index
+                return scope
             elif (segments[index].data == ";"):
-                leaf.segments.append(segments[index])
-                node.segments.append(leaf)
-                leaf = Leaf()
+                expression.segments.append(segments[index])
+                scope.segments.append(expression)
+                expression = Expression()
         else:
-            leaf.segments.append(segments[index])
+            expression.segments.append(segments[index])
         index += 1
-    return node
+    return scope
 
 # main
 if (__name__ == '__main__'):
 
     segments = CodeParse.find_segments("main.cpp")
 
-    tree = create_tree(segments, 0)
+    scope = create_tree(segments, 0)
     tabs = 0
 
 
