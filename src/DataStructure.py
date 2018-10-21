@@ -2,59 +2,60 @@ import CodeParse
 
 class Expression:
     segments = list()
-    def __init__(self):
-        self.segments = list()
+    def __init__(self, segments):
+        self.segments = segments.copy()
 
 class Scope(Expression):
-    start = int()
-    end = int()
+    category = str()
+    expressions = list()
 
-    def __init__(self, start):
-        self.start = start
+    def __init__(self, segments, expressions):
+        super().__init__(segments)
+        self.expressions = expressions
 
 # segments is a list of Segments
 # returns a tree data structure
-def create_tree(segments, start):
+def create_tree(segments, index):
 
-    # TODO turn segments into a tree data structure
-    scope = Scope(start)
-    expression = Expression()
-    index = start
+    expressions = list()
+    acc_segments = list()
+
     while (index < len(segments)):
-        if (segments[index].category == "S" and segments[index].data in {"{", ";", "}"}):
-            if (segments[index].data == "{"):
-                scope.segments.append(create_tree(segments, index + 1))
-                index = scope.segments[-1].end
-            elif (segments[index].data == "}"):
-                scope.end = index
-                return scope
-            elif (segments[index].data == ";"):
-                expression.segments.append(segments[index])
-                scope.segments.append(expression)
-                expression = Expression()
-        else:
-            expression.segments.append(segments[index])
+        segment = segments[index]
+        acc_segments.append(segment)
+        if (segment.category == "S"):
+            if (segment.data == "{"):
+                sub_expressions, index = create_tree(segments, index + 1)
+                expressions.append(Scope(acc_segments, sub_expressions))
+                acc_segments.clear()
+            elif (segment.data == "}"):
+                # TODO check for extra ;
+                return expressions, index
+            elif (segment.data == ";"):
+                expressions.append(Expression(acc_segments))
+                acc_segments.clear()
         index += 1
-    return scope
+    return expressions, index
+
+# TODO write description
+def print_all_segments(segments, tabs):
+    print(tabs * "\t", end = "")
+    for segment in segments:
+        if (segment.category not in {"//", "/*"}):
+            print(segment.data, end = " ")
+    print()
+
+# TODO write description
+def print_all_expressions(expressions, tabs):
+    for expression in expressions:
+        print_all_segments(expression.segments, tabs + 1)
+        if (type(expression) == Scope):
+            print_all_expressions(expression.expressions, tabs + 1)
 
 # main
 if (__name__ == '__main__'):
 
     segments = CodeParse.find_segments("main.cpp")
 
-    scope = create_tree(segments, 0)
-    tabs = 0
-
-
-
-    """for e in tree:
-        for i in range(tabs):
-            print(end="\t")
-        for s in e:
-            if (s.category not in {"/*", "//", "H"}):
-                print(s.data, end=" ")
-        if (e[len(e) - 1].data == "{"):
-            tabs += 1
-        elif (e[len(e) - 1].data == "}"):
-            tabs -= 1
-        print()"""
+    scope = create_tree(segments, 0)[0]
+    print_all_expressions(scope, 0)
