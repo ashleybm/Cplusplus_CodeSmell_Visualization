@@ -22,11 +22,8 @@ class DividerType:
         self.expand = expand
 
 # used to tell that a symbol is at a position in a string
-class Divider:
+class Divider(DividerType):
     pos = int()
-    start = str()
-    end = str()
-    expand = int()
 
     # constructor
     def __init__(self, pos = 0, divider_type = DividerType()):
