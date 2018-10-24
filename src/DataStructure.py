@@ -74,6 +74,9 @@ def create_method(segments, index):
                 expressions.append(Scope(acc_segments, sub_expressions))
                 acc_segments.clear()
             elif (segment.data == "}"):
+                acc_segments.pop()
+                if (len(acc_segments) > 0):
+                    expressions.append(Expression(acc_segments))
                 return expressions, index
             elif (segment.data == ";"):
                 expressions.append(Expression(acc_segments))
@@ -101,6 +104,7 @@ def create_method(segments, index):
                     else:
                         sub_scope, index = parse_scope(acc_segments, segments, index)
                         expressions.append(sub_scope)
+                        acc_segments.clear()
                         break
                     index += 1
             elif (segment.data == "do"):
@@ -136,6 +140,7 @@ def create_tree(segments, index):
         acc_segments.append(segment)
         if (segment.category == "S"):
             if (segment.data == "{"):
+                acc_segments.pop()
                 if (is_class(acc_segments)):
                     sub_expressions, index = create_tree(segments, index + 1)
                     expressions.append(Scope(acc_segments, sub_expressions))
@@ -156,19 +161,26 @@ def create_tree(segments, index):
     return expressions, index
 
 # TODO write description
-def print_all_segments(segments, tabs):
+def print_min_segments(segments, tabs):
     print(tabs * "\t", end = "")
     for segment in segments:
         if (segment.category not in {"//", "/*"}):
             print(segment.data, end = " ")
     print()
 
-# TODO write description
-def print_all_expressions(expressions, tabs):
+# TODO desc
+def print_all_segments(segments, tabs):
+    for segment in segments:
+        print(tabs * "\t", end = "")
+        print(segment.data)
+    print()
+
+# TODO desc
+def print_all_expressions(expressions, tabs, print_segments):
     for expression in expressions:
-        print_all_segments(expression.segments, tabs + 1)
+        print_segments(expression.segments, tabs + 1)
         if (type(expression) == Scope):
-            print_all_expressions(expression.expressions, tabs + 1)
+            print_all_expressions(expression.expressions, tabs + 1, print_segments)
 
 # main
 if (__name__ == '__main__'):
@@ -176,4 +188,4 @@ if (__name__ == '__main__'):
     segments = CodeParse.find_segments("main.cpp")
 
     scope = create_tree(segments, 0)[0]
-    print_all_expressions(scope, 0)
+    print_all_expressions(scope, 0, print_min_segments)

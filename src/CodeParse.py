@@ -106,7 +106,7 @@ def is_word(char):
 # char is a character
 # returns true if char can be in a number
 def is_num(char):
-    return char.isdigit() or char in {"'", "f", "F", ".", "+", "-", "e"}
+    return char.isalnum() or char in {"'", "."}
 
 # code is a string of C++
 # returns a list of Dividers, one for each instance of a symbol
