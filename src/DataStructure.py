@@ -1,12 +1,16 @@
 import CodeParse
 
-# TODO desc
+# Expressions are a list of segments that do not have relevance
+# to the structure of the actual code. Generally, these also
+# do not affect our code smell identification.
 class Expression:
     segments = list()
     def __init__(self, segments):
         self.segments = segments.copy()
 
-# TODO desc
+# A Scope is generally something within brackets, or a loop (without brackets)
+# where we can expect something to happen more than once/or not at all.
+# Style generally dictates that these are things that are indented from code.
 class Scope(Expression):
     category = str()
     expressions = list()
@@ -15,14 +19,17 @@ class Scope(Expression):
         super().__init__(segments)
         self.expressions = expressions
 
-# TODO desc
+# This Method identifies whether or not the segements contain the
+# key words struct or class, which lets us identify the function of
+# the potential scope.
 def is_class(segments):
     for segment in segments:
         if (segment.category == "W" and segment.data in {"class", "struct"}):
             return True
     return False
 
-# TODO desc
+# This function parses segements with parenthesis to identify the beginning
+# and end of parenthesis sets.
 def parse_paren(segments, index):
     depth = 0
     acc_segments = list()
@@ -38,8 +45,8 @@ def parse_paren(segments, index):
         index += 1
     return acc_segments, index
 
-# TODO desc
-# expecting {...} or ...;
+# This function is recursively called to identify the beginning and end of
+# scopes identified by brackets (ie {...}) or single lined scopes {ie: ...;}
 def parse_scope(acc_segments, segments, index):
     while (index < len(segments)):
         if (segments[index].category == "S" and segments[index].data == "{"):
@@ -59,7 +66,9 @@ def parse_scope(acc_segments, segments, index):
             acc_segments.append(segments[index])
         index += 1
 
-# TODO desc
+# This function is used to parse a segment list if it is identified as a
+# method. This is done by identifying the parameters, body, and name of the
+# function. This then returns the formated expression list and new index.
 def create_method(segments, index):
 
     expressions = list()
@@ -160,7 +169,7 @@ def create_tree(segments, index):
         index += 1
     return expressions, index
 
-# TODO write description
+# Prints Segments with the corresponding lines tabs.
 def print_min_segments(segments, tabs):
     print(tabs * "\t", end = "")
     for segment in segments:
@@ -168,14 +177,15 @@ def print_min_segments(segments, tabs):
             print(segment.data, end = " ")
     print()
 
-# TODO desc
+# Prints Segments by calling "print_min_segments", this function keeps track
+# of the lines amount of tabs.
 def print_all_segments(segments, tabs):
     for segment in segments:
         print(tabs * "\t", end = "")
         print(segment.data)
     print()
 
-# TODO desc
+# Prints all expressions by printing all segments with an expression call.
 def print_all_expressions(expressions, tabs, print_segments):
     for expression in expressions:
         print_segments(expression.segments, tabs + 1)

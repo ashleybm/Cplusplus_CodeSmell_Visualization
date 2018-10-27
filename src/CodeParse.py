@@ -1,4 +1,4 @@
- 
+
 # used to split a string into segments of different meaning
 class Segment:
     data = str()
@@ -42,7 +42,7 @@ class SegmentManager:
     overhang = str()
 
     # code is a string of C++
-    # category is the type of code 
+    # category is the type of code
     # splits the code into multiple segments if necessary and stores them as seperate segments
     def append(self, code, category):
         if (category == ""):
