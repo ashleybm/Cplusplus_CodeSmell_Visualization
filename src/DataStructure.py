@@ -8,6 +8,13 @@ class Expression:
     def __init__(self, segments):
         self.segments = segments.copy()
 
+    def as_string(self):
+        data = str()
+        for segment in self.segments:
+            if (segment.category not in {"//", "/*"}):
+                data += segment.data + " "
+        return data
+
 # A Scope is generally something within brackets, or a loop (without brackets)
 # where we can expect something to happen more than once/or not at all.
 # Style generally dictates that these are things that are indented from code.
@@ -15,9 +22,10 @@ class Scope(Expression):
     category = str()
     expressions = list()
 
-    def __init__(self, segments, expressions):
+    def __init__(self, segments, expressions, category = ""):
         super().__init__(segments)
         self.expressions = expressions
+        self.category = category
 
 # This Method identifies whether or not the segements contain the
 # key words struct or class, which lets us identify the function of
@@ -80,7 +88,7 @@ def create_method(segments, index):
         if (segment.category == "S"):
             if (segment.data == "{"):
                 sub_expressions, index = create_method(segments, index + 1)
-                expressions.append(Scope(acc_segments, sub_expressions))
+                expressions.append(Scope(acc_segments, sub_expressions, "method"))
                 acc_segments.clear()
             elif (segment.data == "}"):
                 acc_segments.pop()
@@ -95,6 +103,10 @@ def create_method(segments, index):
                 sub_segments, index = parse_paren(segments, index + 1)
                 acc_segments += sub_segments
                 sub_scope, index = parse_scope(acc_segments, segments, index + 1)
+                if (segment.data in {"if", "switch"}):
+                    sub_scope.category = "conditional"
+                else:
+                    sub_scope.category = "loop"
                 expressions.append(sub_scope)
                 acc_segments.clear()
             elif (segment.data == "else"):
@@ -105,6 +117,7 @@ def create_method(segments, index):
                         sub_segments, index = parse_paren(segments, index + 1)
                         acc_segments += sub_segments
                         sub_scope, index = parse_scope(acc_segments, segments, index + 1)
+                        sub_scope.category = "conditional"
                         expressions.append(sub_scope)
                         acc_segments.clear()
                         break
@@ -112,12 +125,14 @@ def create_method(segments, index):
                         acc_segments.append(segments[index])
                     else:
                         sub_scope, index = parse_scope(acc_segments, segments, index)
+                        sub_scope.category = "conditional"
                         expressions.append(sub_scope)
                         acc_segments.clear()
                         break
                     index += 1
             elif (segment.data == "do"):
                 sub_scope, index = parse_scope(acc_segments, segments, index + 1)
+                sub_scope.category = "loop"
                 index += 1
                 while (index < len(segments) and not (segments[index].category == "W" and segments[index].data == "while")):
                     sub_scope.segments.append(segments[index])
@@ -152,11 +167,11 @@ def create_tree(segments, index):
                 acc_segments.pop()
                 if (is_class(acc_segments)):
                     sub_expressions, index = create_tree(segments, index + 1)
-                    expressions.append(Scope(acc_segments, sub_expressions))
+                    expressions.append(Scope(acc_segments, sub_expressions, "class"))
                     acc_segments.clear()
                 else: # method OR array?
                     sub_expressions, index = create_method(segments, index + 1)
-                    expressions.append(Scope(acc_segments, sub_expressions))
+                    expressions.append(Scope(acc_segments, sub_expressions, "method"))
                     acc_segments.clear()
             elif (segment.data == "}"):
                 return expressions, index
@@ -191,6 +206,12 @@ def print_all_expressions(expressions, tabs, print_segments):
         print_segments(expression.segments, tabs + 1)
         if (type(expression) == Scope):
             print_all_expressions(expression.expressions, tabs + 1, print_segments)
+
+# TODO
+def parse_file(path):
+    segments = CodeParse.find_segments(path)
+    scope = create_tree(segments, 0)[0]
+    return scope
 
 # main
 if (__name__ == '__main__'):
