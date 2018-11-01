@@ -8,28 +8,30 @@ class CodeSmell:
         self.description = description
 
 def get_long_methods(scope):
-    method_lengths = parse_method_lengths(scope)
+    methods = get_methods(scope)
+    lengths = list()
+    for method in methods:
+        lengths.append(count_expressions(method.expressions))
     smells = list()
     average = 0
-    for method in method_lengths:
-        average += method[1]
-    average /= len(method_lengths)
+    for length in lengths:
+        average += length
+    average /= len(methods)
     max_length = average * 1.5
-    for method in method_lengths:
-        if (method[1] > max_length):
-            smells.append(CodeSmell(method[0], "Large Method: Contains " + str(method[1]) + " lines which is above the max of " + str(max_length)))
+    for index, length in enumerate(lengths):
+        if (length > max_length):
+            smells.append(CodeSmell(methods[index], "Large Method: Contains " + str(length) + " lines which is above the max of " + str(max_length)))
     return smells
 
-def parse_method_lengths(scope):
-    method_lengths = list()
+def get_methods(scope):
+    methods = list()
     for expression in scope:
         if (type(expression) == DataStructure.Scope):
             if (expression.category == "method"):
-                count = count_expressions(expression.expressions)
-                method_lengths.append([expression, count])
+                methods.append(expression)
             else:
-                method_lengths += parse_method_lengths(expression.expressions)
-    return method_lengths
+                methods += get_methods(expression.expressions)
+    return methods
 
 def count_expressions(scope):
     count = 0
