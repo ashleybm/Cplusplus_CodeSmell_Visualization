@@ -3,6 +3,9 @@ import DataStructure
 class CodeSmell:
     description = str()
 
+    def get_line_num(self):
+        return self.expression.get_line_num()
+
     def __init__(self, expression, description):
         self.expression = expression
         self.description = description
@@ -48,4 +51,4 @@ if (__name__ == "__main__"):
     smells += get_long_methods(dataStructure)
 
     for smell in smells:
-        print(smell.description, smell.expression.as_string())
+        print("Line:", smell.get_line_num(), ":", smell.description, smell.expression.as_string())
