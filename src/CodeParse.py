@@ -3,19 +3,21 @@ class Segment:
     """
     used to split a string into segments of different meaning
         data - chracters from file that are in this segment
+        line - line number this segment starts on
         category - how the characters should be dealt with
-        '' - undefined code (internal use only)
-        'H' - header
-        'S' - symbol
-        'W' - word
-        'N' - number literal
-        '/*' or '//' - comment
-        '"' - string literal
-        ''' - character literal
+            '' - undefined code (internal use only)
+            'H' - header
+            'S' - symbol
+            'W' - word
+            'N' - number literal
+            '/*' or '//' - comment
+            '"' - string literal
+            ''' - character literal
     """
 
-    def __init__(self, category, data):
+    def __init__(self, category, line, data):
         self.category = category
+        self.line = line
         self.data = data
 
 class DividerType:
@@ -57,11 +59,13 @@ class SegmentManager:
     used to manage segments and split further into words
         segments - individual segments between each type of code
         overhand - remainder segment not completed
+        line_num - line number next segment will be on
     """
 
     def __init__(self):
         self.segments = list()
         self.overhang = str()
+        self.line_num = 1
 
     def append(self, code, category):
         """
@@ -76,7 +80,8 @@ class SegmentManager:
             while (index < len(code)):
                 index = self.append_code(code, index)
         else:
-            self.segments.append(Segment(category, code))
+            self.segments.append(Segment(category, self.line_num, code))
+            self.line_num += code.count("\n")
 
     def append_code(self, code, index):
         """
@@ -85,7 +90,10 @@ class SegmentManager:
             code - string of C++
             index - next character to check
         """
-        if (code[index] in {" ", "\t", "\n"}):
+        if (code[index] == "\n"):
+            self.line_num += 1
+            return index + 1
+        if (code[index] in {" ", "\t"}):
             return index + 1
         elif (code[index] == "#"):
             end_index = code.find("\n", index)
@@ -93,21 +101,21 @@ class SegmentManager:
                 self.overhang = code[index:]
                 return len(code)
             else:
-                self.segments.append(Segment("H", code[index:end_index]))
+                self.segments.append(Segment("H", self.line_num, code[index:end_index]))
                 return end_index
         elif (code[index].isalpha() or code[index] == "_"):
             return self.add_group(code, index, is_word, "W")
         elif (code[index].isdigit()):
             return self.add_group(code, index, is_num, "N")
         elif (code[index:index + 3] in {"<<=", ">>="}):
-            self.segments.append(Segment("S", code[index:index + 3]))
+            self.segments.append(Segment("S", self.line_num, code[index:index + 3]))
             return index + 3
         elif (code[index:index + 2] in {"++", "--", "==", "!=", ">=", "<=", "&&", "||",
                 "<<", ">>", "+=", "-=", "*=", "/=", "%=", "|=", "^=", "->", "::"}):
-            self.segments.append(Segment("S", code[index:index + 2]))
+            self.segments.append(Segment("S", self.line_num, code[index:index + 2]))
             return index + 2
         else:
-            self.segments.append(Segment("S", code[index]))
+            self.segments.append(Segment("S", self.line_num, code[index]))
             return index + 1
 
 
@@ -123,7 +131,7 @@ class SegmentManager:
         end_index = index + 1
         while (end_index < len(code) and method(code[end_index])):
             end_index += 1
-        self.segments.append(Segment(symbol, code[index:end_index]))
+        self.segments.append(Segment(symbol, self.line_num, code[index:end_index]))
         return end_index
 
 def is_word(char):
@@ -193,7 +201,7 @@ def find_segments(path):
     returns a list of Segments, one for each group of code in the same category
         path - a .cpp file
     """
-    code = get_code(path)
+    code = open(path, 'r').read()
     segment_manager = SegmentManager()
     dividers = find_all_dividers(code)
     prev_divider = Divider()
@@ -204,19 +212,11 @@ def find_segments(path):
                 segment_manager.append(code[prev_divider.pos:divider.pos], prev_divider.start)
                 prev_divider = divider
         else:
-            if (divider.start == prev_divider.end):
+            if (divider.start == prev_divider.end and (divider.start != "\n" or code[divider.pos - 1] != "\\")):
                 segment_manager.append(code[prev_divider.pos:divider.pos + prev_divider.expand], prev_divider.start)
                 prev_divider = Divider(divider.pos + prev_divider.expand)
     segment_manager.append(code[prev_divider.pos:], prev_divider.start)
     return segment_manager.segments
-
-def get_code(path):
-    """
-    returns C++ code from file at path with escaped new lines removed
-    """
-    code = open(path, 'r').read()
-    code = code.replace("\\\n", "")
-    return code
 
 def print_all_segments(segments):
     """
@@ -243,7 +243,7 @@ def print_all_segments(segments):
             category = "COMMENT  "
         else:
             category = seg.category
-        print(category, ":", seg.data.replace("\n", " "))
+        print(seg.line, ":", category, ":", seg.data.replace("\n", " "))
 
 def print_min_segments(segments):
     """
