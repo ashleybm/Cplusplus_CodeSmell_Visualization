@@ -1,13 +1,9 @@
 import DataStructure
 
 class CodeSmell:
-    description = str()
-
-    def get_line_num(self):
-        return self.expression.get_line_num()
-
-    def __init__(self, expression, description):
-        self.expression = expression
+    def __init__(self, smell_type, expression, description):
+        self.smell_type = smell_type
+        self.line_num = expression.get_line_num()
         self.description = description
 
 def get_long_methods(scope):
@@ -23,7 +19,7 @@ def get_long_methods(scope):
     max_length = average * 1.5
     for index, length in enumerate(lengths):
         if (length > max_length):
-            smells.append(CodeSmell(methods[index], "Large Method: Contains " + str(length) + " lines which is above the max of " + str(max_length)))
+            smells.append(CodeSmell("Large Method", methods[index], "Contains " + str(length) + " lines which is above the max of " + str(max_length)))
     return smells
 
 def get_methods(scope):
@@ -44,11 +40,13 @@ def count_expressions(scope):
             count += count_expressions(expression.expressions)
     return count
 
-if (__name__ == "__main__"):
-    dataStructure = DataStructure.parse_file("main2.cpp")
-
+def get_smells(path):
+    data_structure = DataStructure.parse_file(path)
     smells = list()
-    smells += get_long_methods(dataStructure)
+    smells += get_long_methods(data_structure)
+    return smells
 
+if (__name__ == "__main__"):
+    smells = get_smells("main2.cpp")
     for smell in smells:
-        print("Line:", smell.get_line_num(), ":", smell.description, smell.expression.as_string())
+        print("Line:", smell.line_num, ":", smell.smell_type, ":", smell.description)
