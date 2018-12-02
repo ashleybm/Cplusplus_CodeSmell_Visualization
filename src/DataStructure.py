@@ -8,6 +8,11 @@ class Expression:
     def __init__(self, segments):
         self.segments = segments.copy()
 
+    def get_line_num(self):
+        if (len(self.segments) == 0):
+            return -1
+        return self.segments[0].line
+
     def as_string(self):
         data = str()
         for segment in self.segments:
