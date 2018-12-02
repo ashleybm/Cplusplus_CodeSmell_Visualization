@@ -6,7 +6,10 @@ class CodeSmell:
         self.line_num = expression.get_line_num()
         self.description = description
 
-def get_long_methods(scope):
+    def __lt__(self, other):
+        return self.line_num < other.line_num
+
+def get_large_methods(scope):
     methods = get_methods(scope)
     lengths = list()
     for method in methods:
@@ -19,7 +22,23 @@ def get_long_methods(scope):
     max_length = average * 1.5
     for index, length in enumerate(lengths):
         if (length > max_length):
-            smells.append(CodeSmell("Large Method", methods[index], "Contains " + str(length) + " lines which is above the max of " + str(max_length)))
+            smells.append(CodeSmell("Large Method", methods[index], "Contains " + str(length) + " expressions which is above the max of " + str(max_length)))
+    return smells
+
+def get_large_classes(scope):
+    items = get_classes(scope)
+    lengths = list()
+    for item in items:
+        lengths.append(len(item.expressions))
+    smells = list()
+    average = 0
+    for length in lengths:
+        average += length
+    average /= len(items)
+    max_length = average * 1.25
+    for index, length in enumerate(lengths):
+        if (length > max_length):
+            smells.append(CodeSmell("Large Class", items[index], "Contains " + str(length) + " methods and variables which is above the max of " + str(max_length)))
     return smells
 
 def get_lack_comments(scope):
@@ -64,8 +83,10 @@ def count_expressions(scope):
 def get_smells(path):
     data_structure = DataStructure.parse_file(path)
     smells = list()
-    smells += get_long_methods(data_structure)
+    smells += get_large_methods(data_structure)
+    smells += get_large_classes(data_structure)
     smells += get_lack_comments(data_structure)
+    smells.sort()
     return smells
 
 if (__name__ == "__main__"):
