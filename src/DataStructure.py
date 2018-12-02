@@ -41,6 +41,14 @@ def is_class(segments):
             return True
     return False
 
+# This Method identifies whether or not the segements contain a left parenthesis
+# which lets us identify the function of the potential scope.
+def is_method(segments):
+    for segment in segments:
+        if (segment.category == "S" and segment.data == "("):
+            return True
+    return False
+
 # This function parses segements with parenthesis to identify the beginning
 # and end of parenthesis sets.
 def parse_paren(segments, index):
@@ -172,11 +180,20 @@ def create_tree(segments, index):
                 acc_segments.pop()
                 if (is_class(acc_segments)):
                     sub_expressions, index = create_tree(segments, index + 1)
+                    while (index < len(segments) and segments[index].data != ";"):
+                        index += 1
                     expressions.append(Scope(acc_segments, sub_expressions, "class"))
                     acc_segments.clear()
-                else: # method OR array?
+                elif (is_method(acc_segments)):
                     sub_expressions, index = create_method(segments, index + 1)
                     expressions.append(Scope(acc_segments, sub_expressions, "method"))
+                    acc_segments.clear()
+                else:
+                    while (index < len(segments) and segments[index].data != ";"):
+                        acc_segments.append(segments[index])
+                        index += 1
+                    acc_segments.append(segments[index])
+                    expressions.append(Expression(acc_segments))
                     acc_segments.clear()
             elif (segment.data == "}"):
                 return expressions, index

@@ -22,11 +22,32 @@ def get_long_methods(scope):
             smells.append(CodeSmell("Large Method", methods[index], "Contains " + str(length) + " lines which is above the max of " + str(max_length)))
     return smells
 
+def get_lack_comments(scope):
+    methods = get_methods(scope) + get_classes(scope)
+    smells = list()
+    for method in methods:
+        for segment in method.segments:
+            if (segment.category in {"/*", "//"}):
+                break
+        else:
+            smells.append(CodeSmell("Lack of Comments", method, "Contains no comment before"))
+    return smells
+
 def get_methods(scope):
     methods = list()
     for expression in scope:
         if (type(expression) == DataStructure.Scope):
             if (expression.category == "method"):
+                methods.append(expression)
+            else:
+                methods += get_methods(expression.expressions)
+    return methods
+
+def get_classes(scope):
+    methods = list()
+    for expression in scope:
+        if (type(expression) == DataStructure.Scope):
+            if (expression.category == "class"):
                 methods.append(expression)
             else:
                 methods += get_methods(expression.expressions)
@@ -44,6 +65,7 @@ def get_smells(path):
     data_structure = DataStructure.parse_file(path)
     smells = list()
     smells += get_long_methods(data_structure)
+    smells += get_lack_comments(data_structure)
     return smells
 
 if (__name__ == "__main__"):
