@@ -4,96 +4,50 @@ from tkinter.filedialog import askopenfilename
 from tkinter import *
 from tkinter import ttk
 
-largeMethod = Tk()
-longParameterList = Tk()
-duplicateCode = Tk()
-largeClass = Tk()
-lackOfComments = Tk()
-#root = Tk(  )
+smell_types = ["Large Method", "Long Parameter List", "Duplicate Code", "Large Class", "Lack of Comments"]
+boxes = list()
+labels = list()
 
-#This is where we lauch the file manager bar.
 def OpenFile():
-    name = askopenfilename(initialdir="/",
-                           filetypes =(("C++ File", "*.cpp"),("All Files","*.*")),
-                           title = "Choose a file."
-                           )
-    print (name)
-    #Using try in case user types in unknown file or closes without choosing a file.
+    # try to open file
     try:
-        with open(name,'r') as UseFile:
-            print(name)
-    except:
-        print("No file exists")
-    return name
+        name = askopenfilename(filetypes =(("C++ File", "*.cpp"),("All Files","*.*")),
+                           title = "Choose a file.")
+        smells = SmellIdentifier.get_smells(name)
+        # clear listboxes
+        for box in boxes:
+            box.delete(0, END)
+            box.config(bg="LIGHT GREY")
+        
+        button.config(bg="LIGHT GREY")
+        for smell in smells:
+            try:
+                index = smell_types.index(smell.smell_type)
+                boxes[index].insert(END, f"line #{smell.line_num}")
+                boxes[index].insert(END, "    " + smell.description)
+            except:
+                print("Invalid Smell", smell.smell_type, smell.description)
+    except Exception as e:
+        print(str(e))
 
+if (__name__ == "__main__"):
 
-#Title = root.title( "File Opener")
-Title = largeMethod.title( "Large Methods")
-Title = longParameterList.title( "Long Parameter Lists")
-Title = duplicateCode.title( "Duplicate Code")
-Title = largeClass.title( "Large Classes")
-Title = lackOfComments.title( "Lack of Comments")
-#label = ttk.Label(root, text ="Code Smell Identifier",foreground="black",font=("Helvetica", 16))
-#label.pack()
+    window = Tk()
+    window.config(width=1500, height=500)
+    window.title("C++ Code Smells")
+    window.state("zoomed")
 
-#Menu Bar
+    canvas = Canvas(window)
+    canvas.place(relx=0.5, rely=0.0, anchor=N)
 
-#menu = Menu(root)
-#root.config(menu=menu)
+    button = Button(canvas, text="Choose File")
+    button.config(width=20, height=2, command=OpenFile, bg="GREEN")
+    button.grid(row=0, column=0, columnspan=5)
 
-#file = Menu(menu)
+    for i in range(len(smell_types)):
+        labels.append(Label(canvas, text=smell_types[i]))
+        labels[i].grid(row=1, column=i)
+        boxes.append(Listbox(canvas, width=50, height=20, bg="GREY"))
+        boxes[i].grid(row=2, column=i)
 
-#file.add_command(label = 'Open', command = OpenFile)
-#file.add_command(label = 'Exit', command = lambda:exit())
-
-#menu.add_cascade(label = 'File', menu = file)
-
-Lb1 = Listbox(largeMethod)
-Lb2 = Listbox(longParameterList)
-Lb3 = Listbox(duplicateCode)
-Lb4 = Listbox(largeClass)
-Lb5 = Listbox(lackOfComments)
-
-
-
-name = OpenFile()
-smells = SmellIdentifier.get_smells(name)
-
-for smell in smells:
-    if smell.smell_type == "Large Method":
-        Lb1.insert(END, smell.smell_type)
-        Lb1.insert(END, smell.line_num)
-        Lb1.insert(END, smell.description)
-        Lb1.insert(END, "-------------------------")
-    if smell.smell_type == "Long Parameter List":
-        Lb2.insert(END, smell.smell_type)
-        Lb2.insert(END, smell.line_num)
-        Lb2.insert(END, smell.description)
-        Lb2.insert(END, "-------------------------")
-    if smell.smell_type == "Duplicate Code":
-        Lb3.insert(END, smell.smell_type)
-        Lb3.insert(END, smell.line_num)
-        Lb3.insert(END, smell.description)
-        Lb3.insert(END, "-------------------------")
-    if smell.smell_type == "Large Class":
-        Lb4.insert(END, smell.smell_type)
-        Lb4.insert(END, smell.line_num)
-        Lb4.insert(END, smell.description)
-        Lb4.insert(END, "-------------------------")
-    if smell.smell_type == "Lack of Comments":
-        Lb5.insert(END, smell.smell_type)
-        Lb5.insert(END, smell.line_num)
-        Lb5.insert(END, smell.description)
-        Lb5.insert(END, "-------------------------")
-
-Lb1.pack(fill = BOTH, expand=1)
-Lb2.pack(fill = BOTH, expand=1)
-Lb3.pack(fill = BOTH, expand=1)
-Lb4.pack(fill = BOTH, expand=1)
-Lb5.pack(fill = BOTH, expand=1)
-Lb1.mainloop()
-Lb2.mainloop()
-Lb3.mainloop()
-Lb4.mainloop()
-Lb5.mainloop()
-#root.mainloop()
+    window.mainloop()
