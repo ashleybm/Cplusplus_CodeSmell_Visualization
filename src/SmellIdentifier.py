@@ -9,8 +9,7 @@ class CodeSmell:
     def __lt__(self, other):
         return self.line_num < other.line_num
 
-def get_large_methods(scope):
-    methods = get_methods(scope)
+def get_large_methods(methods):
     lengths = list()
     for method in methods:
         lengths.append(count_expressions(method.expressions))
@@ -26,36 +25,33 @@ def get_large_methods(scope):
             smells.append(CodeSmell("Large Method", methods[index], f"{perc:.0f}% above average of {max_length:.0f}"))
     return smells
 
-def get_large_classes(scope):
-    items = get_classes(scope)
+def get_large_classes(classes):
     lengths = list()
-    for item in items:
+    for item in classes:
         lengths.append(len(item.expressions))
     smells = list()
     average = 0
     for length in lengths:
         average += length
-    average /= len(items)
+    average /= len(classes)
     max_length = average * 1.25
     for index, length in enumerate(lengths):
         if (length > max_length):
             perc = 100 * length / average - 100
-            smells.append(CodeSmell("Large Class", items[index], f"{perc:.0f}% above average of {max_length:.0f}"))
+            smells.append(CodeSmell("Large Class", classes[index], f"{perc:.0f}% above average of {max_length:.0f}"))
     return smells
 
-def get_lack_comments(scope):
-    methods = get_methods(scope) + get_classes(scope)
+def get_lack_comments(items):
     smells = list()
-    for method in methods:
-        for segment in method.segments:
+    for item in items:
+        for segment in item.segments:
             if (segment.category in {"/*", "//"}):
                 break
         else:
-            smells.append(CodeSmell("Lack of Comments", method, method.as_string()))
+            smells.append(CodeSmell("Lack of Comments", item, item.as_string()))
     return smells
 
-def get_duplicate_code(scope):
-    expressions = get_expressions(scope)
+def get_duplicate_code(expressions):
     smells = list()
     for i in range(len(expressions)):
         for j in range(i + 1, len(expressions) - 4):
@@ -64,6 +60,23 @@ def get_duplicate_code(scope):
                     break
             else:
                 smells.append(CodeSmell("Duplicate Code", expressions[i], "with line #" + str(expressions[j].get_line_num())))
+    return smells
+
+def get_long_param(methods):
+    smells = list()
+    for method in methods:
+        count = 1
+        paren_depth = -1
+        for seg in method.segments:
+            if (seg.category == "S"):
+                if (seg.data == "("):
+                    paren_depth += 1
+                elif (seg.data == ")"):
+                    paren_depth -= 1
+                elif (paren_depth == 0 and seg.data == ","):
+                    count += 1
+        if (count >= 5):
+            smells.append(CodeSmell("Long Parameter List", method, method.as_string()))
     return smells
 
 def get_expressions(scope):
@@ -104,12 +117,19 @@ def count_expressions(scope):
     return count
 
 def get_smells(path):
+    # perform some searches
     data_structure = DataStructure.parse_file(path)
+    methods = get_methods(data_structure)
+    classes = get_classes(data_structure)
+    expressions = get_expressions(data_structure)
+
+    # collect smells
     smells = list()
-    smells += get_large_methods(data_structure)
-    smells += get_large_classes(data_structure)
-    smells += get_lack_comments(data_structure)
-    smells += get_duplicate_code(data_structure)
+    smells += get_large_methods(methods)
+    smells += get_large_classes(classes)
+    smells += get_lack_comments(methods + classes)
+    smells += get_duplicate_code(expressions)
+    smells += get_long_param(methods)
     smells.sort()
     return smells
 
