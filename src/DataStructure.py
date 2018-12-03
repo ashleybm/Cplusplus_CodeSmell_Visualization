@@ -30,6 +30,12 @@ class Expression:
                 data += segment.data + " "
         return data
 
+    def is_header(self):
+        for segment in self.segments:
+            if (segment.category == "H"):
+                return True
+        return False
+
 # A Scope is generally something within brackets, or a loop (without brackets)
 # where we can expect something to happen more than once/or not at all.
 # Style generally dictates that these are things that are indented from code.

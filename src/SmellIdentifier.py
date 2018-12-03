@@ -23,7 +23,7 @@ def get_large_methods(scope):
     for index, length in enumerate(lengths):
         if (length > max_length):
             perc = 100 * length / average - 100
-            smells.append(CodeSmell("Large Method", methods[index], f"\n{perc:.0f}% above average of {max_length:.0f}"))
+            smells.append(CodeSmell("Large Method", methods[index], f"{perc:.0f}% above average of {max_length:.0f}"))
     return smells
 
 def get_large_classes(scope):
@@ -40,7 +40,7 @@ def get_large_classes(scope):
     for index, length in enumerate(lengths):
         if (length > max_length):
             perc = 100 * length / average - 100
-            smells.append(CodeSmell("Large Class", items[index], f"\n{perc:.0f}% above average of {max_length:.0f}"))
+            smells.append(CodeSmell("Large Class", items[index], f"{perc:.0f}% above average of {max_length:.0f}"))
     return smells
 
 def get_lack_comments(scope):
@@ -60,7 +60,7 @@ def get_duplicate_code(scope):
     for i in range(len(expressions)):
         for j in range(i + 1, len(expressions) - 4):
             for k in range(5):
-                if (expressions[i + k] != expressions[j + k]):
+                if (expressions[i + k] != expressions[j + k] or expressions[i + k].is_header()):
                     break
             else:
                 smells.append(CodeSmell("Duplicate Code", expressions[i], "with line #" + str(expressions[j].get_line_num())))
