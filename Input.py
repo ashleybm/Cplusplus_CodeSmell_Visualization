@@ -1,4 +1,3 @@
-import SampleOutput
 import SmellIdentifier
 from tkinter import messagebox
 from tkinter.filedialog import askopenfilename
