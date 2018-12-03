@@ -8,6 +8,16 @@ class Expression:
     def __init__(self, segments):
         self.segments = segments.copy()
 
+    def __eq__(self, other):
+        left_seg = [s for s in self.segments if s.category in {"S", "W", "N", "\'", "\""}]
+        right_seg = [s for s in other.segments if s.category in {"S", "W", "N", "\'", "\""}]
+        if (len(left_seg) == len(right_seg)):
+            for i in range(len(left_seg)):
+                if (left_seg[i].category != right_seg[i].category):
+                    return False
+            return True
+        return False
+
     def get_line_num(self):
         if (len(self.segments) == 0):
             return -1

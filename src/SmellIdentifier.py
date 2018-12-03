@@ -22,7 +22,7 @@ def get_large_methods(scope):
     max_length = average * 1.5
     for index, length in enumerate(lengths):
         if (length > max_length):
-            smells.append(CodeSmell("Large Method", methods[index], "Contains " + str(length) + " expressions which is above the max of " + str(max_length)))
+            smells.append(CodeSmell("Large Method", methods[index], f"Contains {length} expressions which is above the max of {max_length:.0f}"))
     return smells
 
 def get_large_classes(scope):
@@ -38,7 +38,7 @@ def get_large_classes(scope):
     max_length = average * 1.25
     for index, length in enumerate(lengths):
         if (length > max_length):
-            smells.append(CodeSmell("Large Class", items[index], "Contains " + str(length) + " methods and variables which is above the max of " + str(max_length)))
+            smells.append(CodeSmell("Large Class", items[index], f"Contains {length} methods and variables which is above the max of {max_length:.0f}"))
     return smells
 
 def get_lack_comments(scope):
@@ -49,8 +49,29 @@ def get_lack_comments(scope):
             if (segment.category in {"/*", "//"}):
                 break
         else:
-            smells.append(CodeSmell("Lack of Comments", method, "Contains no comment before"))
+            smells.append(CodeSmell("Lack of Comments", method, "Contains no comment before method/class"))
     return smells
+
+def get_duplicate_code(scope):
+    expressions = get_expressions(scope)
+    smells = list()
+    for i in range(len(expressions)):
+        for j in range(i + 1, len(expressions) - 4):
+            for k in range(5):
+                if (expressions[i + k] != expressions[j + k]):
+                    break
+            else:
+                smells.append(CodeSmell("Duplicate Code", expressions[i], "Duplicate starting at line " + str(expressions[j].get_line_num())))
+    return smells
+
+def get_expressions(scope):
+    expressions = list()
+    for expression in scope:
+        if (type(expression) == DataStructure.Scope):
+            expressions += get_expressions(expression.expressions)
+        else:
+            expressions.append(expression)
+    return expressions
 
 def get_methods(scope):
     methods = list()
@@ -86,6 +107,7 @@ def get_smells(path):
     smells += get_large_methods(data_structure)
     smells += get_large_classes(data_structure)
     smells += get_lack_comments(data_structure)
+    smells += get_duplicate_code(data_structure)
     smells.sort()
     return smells
 
