@@ -54,7 +54,7 @@ def get_lack_comments(items):
 def get_duplicate_code(expressions):
     smells = list()
     for i in range(len(expressions)):
-        for j in range(i + 1, len(expressions) - 4):
+        for j in range(i + 5, len(expressions) - 4):
             for k in range(5):
                 if (expressions[i + k] != expressions[j + k] or expressions[i + k].is_header()):
                     break
@@ -125,9 +125,12 @@ def get_smells(path):
 
     # collect smells
     smells = list()
-    smells += get_large_methods(methods)
-    smells += get_large_classes(classes)
-    smells += get_lack_comments(methods + classes)
+    if (len(methods) > 0):
+        smells += get_large_methods(methods)
+    if (len(classes) > 0):
+        smells += get_large_classes(classes)
+    if (len(methods) > 0 or len(classes) > 0):
+        smells += get_lack_comments(methods + classes)
     smells += get_duplicate_code(expressions)
     smells += get_long_param(methods)
     smells.sort()
