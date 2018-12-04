@@ -26,6 +26,7 @@ labels = list()
 boxes = list()
 
 cur_file_name = str()
+smell_counts = list()
 
 def find_smell(name):
     for i in range(len(smell_types)):
@@ -35,11 +36,14 @@ def find_smell(name):
 
 def open_file():
     global cur_file_name
+    global smell_counts
     # try to open file
     try:
         cur_file_name = filedialog.askopenfilename(filetypes =(("C++ File", "*.cpp"),("All Files","*.*")),
                            title = "Choose a file.")
         smells = SmellIdentifier.get_smells(cur_file_name)
+        smell_counts = [0] * len(smell_types)
+
         # clear listboxes
         for box in boxes:
             box.delete(0, tk.END)
@@ -49,6 +53,7 @@ def open_file():
         for smell in smells:
             index = find_smell(smell.smell_type)
             if (index >= 0):
+                smell_counts[index] += 1
                 boxes[index].insert(tk.END, f"line #{smell.line_num}")
                 boxes[index].insert(tk.END, "    " + smell.description)
             else:
@@ -60,38 +65,12 @@ def open_file():
 
 def display_file():
     if (cur_file_name != ""):
-        smells = SmellIdentifier.get_smells(cur_file_name)
-
-
-        method_counter = 0
-        parameter_counter = 0
-        parameter_list_counter = 0
-        duplicate_counter = 0
-        class_counter = 0
-        comment_counter = 0
-
-        for smell in smells:
-            if smell.smell_type == "Large Method":
-                method_counter+=1
-            if smell.smell_type == "Long Parameter List":
-                parameter_counter+=1
-            if smell.smell_type == "Duplicate Code":
-                duplicate_counter+=1
-            if smell.smell_type == "Large Class":
-                class_counter+=1
-            if smell.smell_type == "Lack of Comments":
-                comment_counter+=1
-
-        highest = max(method_counter, parameter_counter, duplicate_counter,
-            class_counter, comment_counter)
-
-        smell_counts = (method_counter, parameter_counter,
-            duplicate_counter, class_counter, comment_counter)
+        highest = max(smell_counts)
 
         ind = np.arange(5)    # the x locations for the groups
         width = 0.35       # the width of the bars: can also be len(x) sequence
 
-        p1 = plt.bar(ind, smell_counts, width, yerr=0)
+        plt.bar(ind, smell_counts, width, yerr=0)
 
         plt.ylabel('Number of Smells')
         plt.title('Visualization of Code Smells')
