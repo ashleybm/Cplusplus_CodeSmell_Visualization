@@ -114,72 +114,87 @@ def create_method(segments, index):
     while (index < len(segments)):
         segment = segments[index]
         acc_segments.append(segment)
-        if (segment.category == "S"):
-            if (segment.data == "{"):
-                sub_expressions, index = create_method(segments, index + 1)
-                expressions.append(Scope(acc_segments, sub_expressions, "method"))
-                acc_segments.clear()
-            elif (segment.data == "}"):
-                acc_segments.pop()
-                if (len(acc_segments) > 0):
-                    expressions.append(Expression(acc_segments))
-                return expressions, index
-            elif (segment.data == ";"):
-                expressions.append(Expression(acc_segments))
-                acc_segments.clear()
-        elif (segment.category == "W"):
-            if (segment.data in {"if", "while", "for", "switch"}):
-                sub_segments, index = parse_paren(segments, index + 1)
-                acc_segments += sub_segments
-                sub_scope, index = parse_scope(acc_segments, segments, index + 1)
-                if (segment.data in {"if", "switch"}):
-                    sub_scope.category = "conditional"
-                else:
-                    sub_scope.category = "loop"
-                expressions.append(sub_scope)
-                acc_segments.clear()
-            elif (segment.data == "else"):
-                index += 1
-                while (index < len(segments)):
-                    if (segments[index].category == "W" and segments[index].data == "if"):
-                        acc_segments.append(segments[index])
-                        sub_segments, index = parse_paren(segments, index + 1)
-                        acc_segments += sub_segments
-                        sub_scope, index = parse_scope(acc_segments, segments, index + 1)
-                        sub_scope.category = "conditional"
-                        expressions.append(sub_scope)
-                        acc_segments.clear()
-                        break
-                    elif (segments[index].category in {"//", "/*"}):
-                        acc_segments.append(segments[index])
-                    else:
-                        sub_scope, index = parse_scope(acc_segments, segments, index)
-                        sub_scope.category = "conditional"
-                        expressions.append(sub_scope)
-                        acc_segments.clear()
-                        break
-                    index += 1
-            elif (segment.data == "do"):
-                sub_scope, index = parse_scope(acc_segments, segments, index + 1)
-                sub_scope.category = "loop"
-                index += 1
-                while (index < len(segments) and not (segments[index].category == "W" and segments[index].data == "while")):
-                    sub_scope.segments.append(segments[index])
-                    index += 1
-                sub_scope.segments.append(segments[index])
-                sub_segments, index = parse_paren(segments, index + 1)
-                sub_scope.segments += sub_segments
-                index += 1
-                while (index < len(segments) and not (segments[index].category == "S" and segments[index].data == ";")):
-                    sub_scope.segments.append(segments[index])
-                    index += 1
-                expressions.append(sub_scope)
-                acc_segments.clear()
-        elif (segment.category == "H"):
+        if (segment.category == "S" and segment.data == "{"):
+            exp, index = create_method_bracket(segments, acc_segments, index)
+            expressions.append(exp)
+            acc_segments.clear()
+        elif (segment.category == "H" or (segment.category == "S" and segment.data == ";")):
             expressions.append(Expression(acc_segments))
             acc_segments.clear()
+        elif (segment.category == "W" and segment.data in {"if", "while", "for", "switch"}):
+            sub_scope, index = deal_with_scope(segments, acc_segments, index, segment.data)
+            expressions.append(sub_scope)
+            acc_segments.clear()
+        elif (segment.category == "W" and segment.data == "else"):
+            sub_scope, index = deal_with_else(segments, acc_segments, index)
+            expressions.append(sub_scope)
+            acc_segments.clear()
+        elif (segment.category == "W" and segment.data == "do"):
+            sub_scope, index = deal_with_do(segments, acc_segments, index)
+            expressions.append(sub_scope)
+            acc_segments.clear()
+        elif (segment.category == "S" and segment.data == "}"):
+            acc_segments.pop()
+            expressions.append(Expression(acc_segments))
+            break
         index += 1
-    return expressions, index
+    return [e for e in expressions if len(e.segments) > 0], index
+
+def deal_with_scope(segments, acc_segments, index, scope_type):
+    sub_segments, index = parse_paren(segments, index + 1)
+    acc_segments += sub_segments
+    sub_scope, index = parse_scope(acc_segments, segments, index + 1)
+    if (scope_type in {"if", "switch"}):
+        sub_scope.category = "conditional"
+    else:
+        sub_scope.category = "loop"
+    return sub_scope, index
+
+def deal_with_else(segments, acc_segments, index):
+    index += 1
+    while (index < len(segments)):
+        if (segments[index].category == "W" and segments[index].data == "if"):
+            acc_segments.append(segments[index])
+            sub_segments, index = parse_paren(segments, index + 1)
+            acc_segments += sub_segments
+            sub_scope, index = parse_scope(acc_segments, segments, index + 1)
+            sub_scope.category = "conditional"
+            return sub_scope, index
+        elif (segments[index].category in {"//", "/*"}):
+            acc_segments.append(segments[index])
+        else:
+            sub_scope, index = parse_scope(acc_segments, segments, index)
+            sub_scope.category = "conditional"
+            return sub_scope, index
+        index += 1
+
+def deal_with_do(segments, acc_segments, index):
+    sub_scope, index = parse_scope(acc_segments, segments, index + 1)
+    sub_scope.category = "loop"
+    index += 1
+    while (index < len(segments) and not (segments[index].category == "W" and segments[index].data == "while")):
+        sub_scope.segments.append(segments[index])
+        index += 1
+    sub_scope.segments.append(segments[index])
+    sub_segments, index = parse_paren(segments, index + 1)
+    sub_scope.segments += sub_segments
+    index += 1
+    while (index < len(segments) and not (segments[index].category == "S" and segments[index].data == ";")):
+        sub_scope.segments.append(segments[index])
+        index += 1
+    return sub_scope, index
+
+def create_method_bracket(segments, acc_segments, index):
+    if (is_method(acc_segments)):
+        sub_expressions, index = create_method(segments, index + 1)
+        return Scope(acc_segments, sub_expressions, "method"), index
+    else:
+        while (index < len(segments) and segments[index].data != ";"):
+            acc_segments.append(segments[index])
+            index += 1
+        acc_segments.append(segments[index])
+        return Expression(acc_segments), index
+
 
 # segments is a list of Segments
 # returns a tree data structure
@@ -191,36 +206,32 @@ def create_tree(segments, index):
     while (index < len(segments)):
         segment = segments[index]
         acc_segments.append(segment)
-        if (segment.category == "S"):
+        if (segment.category == "H"):
+            expressions.append(Expression(acc_segments))
+            acc_segments.clear()
+        elif (segment.category == "S"):
             if (segment.data == "{"):
-                acc_segments.pop()
-                if (is_class(acc_segments)):
-                    sub_expressions, index = create_tree(segments, index + 1)
-                    while (index < len(segments) and segments[index].data != ";"):
-                        index += 1
-                    expressions.append(Scope(acc_segments, sub_expressions, "class"))
-                    acc_segments.clear()
-                elif (is_method(acc_segments)):
-                    sub_expressions, index = create_method(segments, index + 1)
-                    expressions.append(Scope(acc_segments, sub_expressions, "method"))
-                    acc_segments.clear()
-                else:
-                    while (index < len(segments) and segments[index].data != ";"):
-                        acc_segments.append(segments[index])
-                        index += 1
-                    acc_segments.append(segments[index])
-                    expressions.append(Expression(acc_segments))
-                    acc_segments.clear()
+                exp, index = create_tree_bracket(segments, acc_segments, index)
+                expressions.append(exp)
+                acc_segments.clear()
             elif (segment.data == "}"):
                 return expressions, index
             elif (segment.data == ";"):
                 expressions.append(Expression(acc_segments))
                 acc_segments.clear()
-        elif (segment.category == "H"):
-            expressions.append(Expression(acc_segments))
-            acc_segments.clear()
         index += 1
     return expressions, index
+
+# create_tree method for dealing with a bracket
+def create_tree_bracket(segments, acc_segments, index):
+    acc_segments.pop()
+    if (is_class(acc_segments)):
+        sub_expressions, index = create_tree(segments, index + 1)
+        while (index < len(segments) and segments[index].data != ";"):
+            index += 1
+        return Scope(acc_segments, sub_expressions, "class"), index
+    else:
+        return create_method_bracket(segments, acc_segments, index)
 
 # Prints Segments with the corresponding lines tabs.
 def print_min_segments(segments, tabs):
