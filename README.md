@@ -5,6 +5,8 @@ We were compelled to create this project as a way to improve a company's code ba
 
 With a dictionary of known or suspected code smells, it empowers JIRA or Task Oriented Project Managers to create Task Items relating to code maintenance. While a Project Manager is identifying items from the “feature backlog” or their “design-meeting”, they can run our tool to identify high impact areas that the following code smells impact: Large Methods, Long Parameter List, Duplicate Code, Large (God) Class, and Lack of Comments.
 
+<img src="Images/Interface.png" alt="Example Interface">
+
 Main Goals/Objectives:
 
   Identify Code Smells and Their Locations in Code:
